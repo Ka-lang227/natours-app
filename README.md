@@ -58,13 +58,46 @@ Notes:
 - models/ — Mongoose models
 - utils/ — helpers, error handling
 
-## Mapbox / CSP notes
-- Mapbox requires allowing its CDN in your Content-Security-Policy if you set CSP. If using `helmet` with CSP enabled, allow:
-  - script-src: https://api.mapbox.com
-  - style-src: https://api.mapbox.com
-  - connect-src: https://api.mapbox.com
-  - img-src: https://api.mapbox.com data:
-- Ensure your templates set the required data attributes (e.g. `#map(data-locations=...)`) used by `mapbox.js`.
+## Content Security Policy (CSP) Configuration
+
+This application uses Mapbox for mapping functionality. If you're using `helmet` with CSP enabled, you need to configure the following directives:
+
+### Required CSP Directives for Mapbox:
+```javascript
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    connectSrc: [
+      "'self'", 
+      "https://*.tiles.mapbox.com", 
+      "https://api.mapbox.com", 
+      "https://events.mapbox.com"
+    ],
+    scriptSrc: ["'self'", "https://api.mapbox.com"],
+    styleSrc: ["'self'", "https://api.mapbox.com", "'unsafe-inline'"],
+    workerSrc: ["'self'", "blob:"],
+    childSrc: ["'self'", "blob:"],
+    imgSrc: ["'self'", "data:", "blob:"]
+  }
+}));
+```
+
+### Key Points:
+- **`connectSrc`**: Allows Mapbox to fetch tiles, API data, and send telemetry
+- **`scriptSrc`** & **`styleSrc`**: Required if loading Mapbox GL JS from their CDN
+- **`workerSrc`** & **`childSrc`**: Required for Mapbox web workers (with `blob:`)
+- **`imgSrc`**: Allows Mapbox to load image tiles using `data:` and `blob:` URIs
+
+### Strict CSP Environments:
+If your environment doesn't allow `worker-src blob:` or `child-src blob:`, use the CSP-specific Mapbox bundle:
+```html
+<script src='https://api.mapbox.com/mapbox-gl-js/v3.x.x/mapbox-gl-csp.js'></script>
+<script>
+  mapboxgl.workerUrl = "https://api.mapbox.com/mapbox-gl-js/v3.x.x/mapbox-gl-csp-worker.js";
+</script>
+```
+
+For more information, see [Mapbox CSP Documentation](https://docs.mapbox.com/mapbox-gl-js/guides/browsers-and-testing/#csp-directives).
 
 ## Common troubleshooting
 - "MIME type" or "script blocked": ensure Parcel built `bundle.js` and `public/` serves it. Run `npm run watch:js` or `npm run build:js`.
