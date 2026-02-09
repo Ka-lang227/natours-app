@@ -1,5 +1,6 @@
 import { login, logout } from './login';
 import { updateSettings } from './updateSettings';
+import { bookTour } from './stripe';
 import { showAlert } from './alerts';
 
 // DOM ELEMENTS
@@ -70,26 +71,13 @@ if (userPasswordForm)
 
 // BOOKING
 if (bookTourBtn) {
-  bookTourBtn.addEventListener('click', async e => {
+  bookTourBtn.addEventListener('click', async (e) => {
     e.target.textContent = 'Processing...';
     const tourId = e.target.dataset.tourId;
-
-    try {
-      // Get checkout session
-      const res = await fetch(`/api/v1/bookings/checkout-session/${tourId}`);
-      const data = await res.json();
-
-      if (data.status === 'fail') {
-        showAlert('error', data.message);
-        e.target.textContent = 'Book tour now!';
-        return;
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.replace(data.session.url);
-    } catch (err) {
-      showAlert('error', 'Error booking tour');
-      e.target.textContent = 'Book tour now!';
-    }
+    await bookTour(tourId);
+    e.target.textContent = 'Book tour now!';
   });
 }
+
+const alertMessage = document.querySelector('body').dataset.alert;
+if (alertMessage) showAlert('success', alertMessage, 20); 

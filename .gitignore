@@ -7,3 +7,5 @@ config.env
 .parcel-cache
 docs
 .cache
+.vercel
+.env*.local

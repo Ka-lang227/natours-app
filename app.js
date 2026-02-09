@@ -17,6 +17,7 @@ const tourRouter = require('./Routes/tourRoutes');
 const userRouter = require('./Routes/userRoutes');
 const reviewRouter = require('./Routes/reviewRoutes');
 const bookingRouter = require('./Routes/bookingRouter');
+const bookingController = require('./controllers/bookingController');
 const viewRouter = require('./Routes/viewRoutes');
 
 const app = express();
@@ -55,11 +56,13 @@ if(process.env.NODE_ENV === 'development'){
 
 const limiter = rateLimit({
     max: 100, // Limit each IP to 100 requests per windowMs
-    windowMs: 60 * 60 * 1000, // 1 hour
+    windowMs: 60 * 60 * 1000, 
     message: 'Too many requests from this IP, please try again in an hour!'
 });
 
 app.use('/api', limiter); // Apply rate limiting to all API routes
+
+app.post('/webhook-checkout', express.raw({ type: 'application/json' }), bookingController.webhookCheckout); // Stripe webhook needs raw body, so we apply this middleware only to the webhook route
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' })); // Limit body size to 10kb
