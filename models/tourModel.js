@@ -169,11 +169,11 @@ tourSchema.pre(/^find/, function (next) {
   next();
 });
 
-tourSchema.post(/^find/, function (docs, next) {
-  // Middleware to perform actions after finding tours
-  console.log(`Query took ${Date.now() - this.start} milliseconds!`); // Log the time taken for the query
-  next();
-});
+// tourSchema.post(/^find/, function (docs, next) {
+//   // Middleware to perform actions after finding tours
+//   // console.log(`Query took ${Date.now() - this.start} milliseconds!`); // commented out: debug log
+//   next();
+// });
 
 // Populate guides automatically for find queries
 tourSchema.pre(/^find/, function (next) {
@@ -187,7 +187,7 @@ tourSchema.pre(/^find/, function (next) {
 tourSchema.pre('aggregate', function (next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); // Exclude secret tours from aggregation results
 
-  console.log(this.pipeline()); // Log the aggregation pipeline
+  // console.log(this.pipeline()); // commented out: debug log
   next();
 });
 

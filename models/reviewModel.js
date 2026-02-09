@@ -67,7 +67,7 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
         }
     ]);
     
-    console.log('Stats calculated:', stats);
+    // console.log('Stats calculated:', stats); // commented out: debug log
     
     if (stats.length > 0) {
         await mongoose.model('Tour').findByIdAndUpdate(tourId, {

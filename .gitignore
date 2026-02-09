@@ -1,8 +1,9 @@
 node_modules
 package-lock.json
 dist
-.env
+*.env
 .vscode
 config.env
 .parcel-cache
 docs
+.cache

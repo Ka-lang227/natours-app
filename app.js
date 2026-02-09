@@ -8,6 +8,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 //const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 const cors = require('cors');
 
 const AppError = require('./utils/appError');
@@ -15,6 +16,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./Routes/tourRoutes');
 const userRouter = require('./Routes/userRoutes');
 const reviewRouter = require('./Routes/reviewRoutes');
+const bookingRouter = require('./Routes/bookingRouter');
 const viewRouter = require('./Routes/viewRoutes');
 
 const app = express();
@@ -71,10 +73,12 @@ app.use(hpp({
     whitelist: ['duration', 'ratingsQuantity', 'ratingsAverage', 'maxGroupSize', 'difficulty', 'price'] // Allow these fields to be passed multiple times in query strings
 }));
 
+app.use(compression()); // Compress all responses
+
 // Test middleware to log request time
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString();
-    console.log('Request Time:', req.requestTime);
+  // console.log('Request Time:', req.requestTime); // commented out: debug log
     next(); 
 });
 
@@ -83,6 +87,7 @@ app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter); //Mounting the routers
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter); // Assuming reviewRouter is defined in reviewRoutes.js
+app.use('/api/v1/bookings', bookingRouter);
 
 app.all('*', (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404)); // Pass the error to the global error handler

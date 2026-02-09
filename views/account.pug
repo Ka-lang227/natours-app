@@ -13,7 +13,7 @@ block content
             nav.user-view__menu
                 ul.side-nav
                     +navItem('#', 'Settings', 'settings', true)
-                    +navItem('#', 'My Bookings', 'briefcase')
+                    +navItem('/my-tours', 'My Bookings', 'briefcase')
                     +navItem('#', 'My reviews', 'star')
                     +navItem('#', 'Billing', 'credit-card')
 
@@ -32,7 +32,7 @@ block content
                     form.form.form-user-data
                         //Without API
                         //- .form__group
-                        //-     label.form__label(for='name')(action='/submit-user-data', method='POST') Name
+                        //-     label.form__label(for='name')(action='/submit-user-data', method='POST' enctype='multipart/form-data') Name
 
                         //With API
                         .form__group
@@ -42,8 +42,10 @@ block content
                             label.form__label(for='email') Email address
                             input#email.form__input(type='email' value=`${user.email}`, required, name='email')
                         .form__group.form__photo-upload
-                            img.form__user-photo(src=`/img/users/${user.photo}` alt='User photo')
-                            a.btn-text(href='') Choose new photo
+                            img.form__user-photo(src=`/img/users/${user.photo}` alt='User photo')    
+                            input.form__upload(type='file', accept='image/*', id='photo', name='photo')
+                            label(for='photo') Choose new photo
+
                         .form__group.right
                             button.btn.btn--small.btn--green Save settings
 

@@ -98,12 +98,12 @@ userSchema.methods.createPasswordResetToken = function() {
     this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex'); // Hash the token
     this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Set expiration time to 10 minutes from now
 
-    console.log({ 
-        resetToken, 
-        hashed: this.passwordResetToken, 
-        expires: this.passwordResetExpires,
-        localExpires: this.passwordResetExpires.toLocaleString()
-    });
+    // console.log({ 
+    //     resetToken, 
+    //     hashed: this.passwordResetToken, 
+    //     expires: this.passwordResetExpires,
+    //     localExpires: this.passwordResetExpires.toLocaleString()
+    // });
     // Note: Do not store the plain token in the database, only the hashed version
     return resetToken; // Return the un-hashed token to send to user
 };
