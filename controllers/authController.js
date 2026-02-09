@@ -5,6 +5,7 @@ const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const Email = require('./../utils/email');
+const compression = require('compression');
 
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -12,17 +13,26 @@ const signToken = (id) => {
     });
 };
 
-const createSendToken = (user, statusCode, res) => {
+// Create and send JWT in an HTTP-only, secure cookie suitable for Vercel
+const createSendToken = (user, statusCode, req, res) => {
     const token = signToken(user._id);
+
+    const cookieExpires = Number(process.env.JWT_COOKIE_EXPIRES_IN) * 24 * 60 * 60 * 1000;
+
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production';
+
     const cookieOptions = {
-        expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000), // 90 days
-            // secure: true, // Only send cookie over HTTPS
-            httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        expires: new Date(Date.now() + cookieExpires),
+        httpOnly: true, // Prevents client-side JS access
+        secure: isSecure, // Ensure cookie is only sent over HTTPS in production/Vercel
+        sameSite: 'Lax' // Mitigates CSRF while allowing top-level GET navigations
     };
-    if(process.env.NODE_ENV === 'production') cookieOptions.secure = true; // In production, set secure to true
+
+    // Optionally allow forcing a cookie domain via env (useful for custom domains)
+    if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN;
 
     res.cookie('jwt', token, cookieOptions);
-        
+
     user.password = undefined; // Remove password from output
 
     res.status(statusCode).json({
@@ -44,11 +54,10 @@ exports.signup = catchAsync(async (req, res, next) => {
     });
     
     const url = `${req.protocol}://${req.get('host')}/me`;
-    // console.log(url); // commented out: not needed in production
     await new Email(newUser, url).sendWelcome();
 
-    // Create and send token
-    createSendToken(newUser, 201, res);
+    // Create and send token (pass `req` so secure flag detection works on Vercel)
+    createSendToken(newUser, 201, req, res);
 });
 
 exports.login = catchAsync( async (req, res, next) => {
@@ -66,17 +75,18 @@ exports.login = catchAsync( async (req, res, next) => {
     };
 
     // 3) If everything is ok, send token to client
-    createSendToken(user, 200, res);
+    createSendToken(user, 200, req, res);
 });
 
 exports.logout = (req, res) => {
-    res.clearCookie('jwt', {
+    // Overwrite cookie with a short-lived value rather than relying on clearCookie
+    res.cookie('jwt', 'loggedout', {
+        expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' // Ensure the cookie is only cleared over HTTPS in production
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https' || process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
     });
-    res.status(200).json({
-        status: 'success'
-    });
+    res.status(200).json({ status: 'success' });
 }
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -207,9 +217,8 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined; // Clear expiration time
     await user.save(); // Save the updated user 
 
-    // 3) Update changedPasswordAt property for the user
     // 4) Log the user in, send JWT
-    createSendToken(user, 200, res);
+    createSendToken(user, 200, req, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -233,5 +242,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     //User.findByIdAndUpdate will not work here because it does not trigger the pre('save') middleware
 
     // 4) Log user in, send JWT
-    createSendToken(user, 200, res);
+    createSendToken(user, 200, req, res);
 });

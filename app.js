@@ -21,6 +21,8 @@ const viewRouter = require('./Routes/viewRoutes');
 
 const app = express();
 
+app.enable('trust proxy'); // Enable if behind a proxy (e.g., Vercel) to get correct req.secure value
+
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
