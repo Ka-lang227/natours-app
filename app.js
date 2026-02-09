@@ -30,8 +30,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public/js')));
 
 app.use(cors({
-    origin: 'http://localhost:4000', // Your frontend origin
-    credentials: true, // Allow credentials (cookies)
+    origin: process.env.NODE_ENV === 'production' 
+      ? true  // Allow all origins in production (same-origin requests)
+      : 'http://localhost:4000',
+    credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
