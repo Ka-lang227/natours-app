@@ -52,7 +52,8 @@
     "regenerator-runtime": "^0.14.1",
     "sharp": "^0.34.5",
     "slugify": "^1.6.6",
-    "stripe": "^20.1.2"
+    "stripe": "^20.1.2",
+    "validator": "^13.15.26"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.0",
