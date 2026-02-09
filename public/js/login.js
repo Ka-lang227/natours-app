@@ -1,40 +1,38 @@
-import axios from 'axios';
 import { showAlert } from './alerts';
 
 export const login = async (email, password) => {
   try {
-    const res = await axios({
+    const res = await fetch('/api/v1/users/login', {
       method: 'POST',
-      url: '/api/v1/users/login',
-      data: {
-        email,
-        password
-      },
-      withCredentials: true // Include cookies in the request
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password })
     });
+    const data = await res.json();
 
-    if (res.data.status === 'success') {
+    if (data.status === 'success') {
       showAlert('success', 'Logged in successfully!');
       window.setTimeout(() => {
         location.assign('/');
       }, 1500);
+    } else {
+      showAlert('error', data.message);
     }
   } catch (err) {
-    showAlert('error', err.response.data.message);
+    showAlert('error', 'Something went wrong!');
   }
 };
 
 export const logout = async () => {
   try {
-    const res = await axios({
+    const res = await fetch('/api/v1/users/logout', {
       method: 'GET',
-      url: '/api/v1/users/logout',
-      withCredentials: true // Include cookies in the request
+      credentials: 'include'
     });
+    const data = await res.json();
 
-    if ((res.data.status === 'success')) 
+    if (data.status === 'success') 
       location.assign('/');
-
   } catch (err) {
     showAlert('error', 'Error logging out! Try again.');
   }

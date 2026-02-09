@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { showAlert } from './alerts';
 
 // type is either 'password' or 'data'
@@ -9,18 +8,21 @@ export const updateSettings = async (data, type) => {
         ? '/api/v1/users/updateMyPassword'
         : '/api/v1/users/updateMe';
 
-    const res = await axios({
+    const isFormData = data instanceof FormData;
+    const res = await fetch(url, {
       method: 'PATCH',
-      url,
-      data,
-      withCredentials: true // <--- include cookies so protected route accepts the request
-      // Note: do NOT manually set Content-Type when sending FormData; browser sets boundary
+      credentials: 'include',
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+      body: isFormData ? data : JSON.stringify(data)
     });
+    const result = await res.json();
 
-    if (res.data.status === 'success') {
+    if (result.status === 'success') {
       showAlert('success', `${type.toUpperCase()} updated successfully!`);
+    } else {
+      showAlert('error', result.message);
     }
   } catch (err) {
-    showAlert('error', err.response.data.message);
+    showAlert('error', 'Something went wrong!');
   }
 };

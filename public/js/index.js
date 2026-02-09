@@ -1,7 +1,5 @@
-import { displayMap } from './mapbox';
 import { login, logout } from './login';
 import { updateSettings } from './updateSettings';
-import { bookTour } from './stripe';
 import { showAlert } from './alerts';
 
 // DOM ELEMENTS
@@ -17,7 +15,10 @@ const bookTourBtn = document.getElementById('book-tour');
 // DELEGATION
 if (mapBox) {
   const locations = JSON.parse(mapBox.dataset.locations);
-  displayMap(locations);
+  // Dynamic import - only loads mapbox-gl when map exists on page
+  import('./mapbox').then(({ displayMap }) => {
+    displayMap(locations);
+  });
 }
 
 if (loginForm)
