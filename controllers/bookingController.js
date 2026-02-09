@@ -46,42 +46,47 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
 
 });
 
-// exports.createBookingCheckout = catchAsync( async (req, res, next) => {
-//     // Temporary solution unsecure
-//     const { tour, user, price } = req.query;
+// Temporary (insecure) middleware kept for compatibility with the
+// client-side success redirect flow. If the query params exist create
+// the booking and redirect; otherwise just continue.
+exports.createBookingCheckout = catchAsync(async (req, res, next) => {
+    const { tour, user, price } = req.query;
 
-//     if(!tour && !user && !price) return next();
-
-//     await Booking.create({ tour, user, price });
-
-//     res.redirect(req.originalUrl.split('?')[0]);
-// });
-
-const createBookingCheckout = async session => {
-    const tour = session.client_reference_id;
-    const user = (await User.findOne({ email: session.customer_email })).id;
-    const price = session.line_items[0].price_data.unit_amount / 100;   
+    if (!tour || !user || !price) return next();
 
     await Booking.create({ tour, user, price });
-}
 
-exports.webhookCheckout = (req, res, next) => { 
-    const signature = req.headers('stripe-signature');
+    res.redirect(req.originalUrl.split('?')[0]);
+});
+
+// Create booking from Stripe session object (used by the webhook)
+const createBookingFromSession = async (session) => {
+    const tour = session.client_reference_id;
+    const userDoc = await User.findOne({ email: session.customer_email });
+    const user = userDoc ? userDoc.id : null;
+    // Use amount_total when available (amount in cents)
+    const price = (session.amount_total || 0) / 100;
+
+    if (!tour || !user) return;
+
+    await Booking.create({ tour, user, price });
+};
+
+exports.webhookCheckout = (req, res, next) => {
+    const signature = req.headers['stripe-signature'];
 
     let event;
     try {
-        event = stripe.webhooks.constructEvent(
-        req.body, 
-        signature, 
-        process.env.STRIPE_WEBHOOK_SECRET
-    );
-    } catch (err){
+        event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
         return res.status(400).send(`Webhook error: ${err.message}`);
     }
 
-    if(event.type == 'checkout.session.completed') 
-        createBookingCheckout(event.data.object);
-    
+    if (event.type === 'checkout.session.completed') {
+        // Respond to Stripe quickly; create booking asynchronously
+        createBookingFromSession(event.data.object);
+    }
+
     res.status(200).json({ received: true });
 };
 
